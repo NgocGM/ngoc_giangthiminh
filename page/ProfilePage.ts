@@ -75,25 +75,10 @@ export class ProfilePage {
       const bookRow = this.page.locator(`tr:has-text("${bookTitle}")`);
       const isVisible = await bookRow.isVisible({ timeout: 2000 }).catch(() => false);
       
-      return isVisible;
+      // Return true if book is DELETED (not visible)
+      return !isVisible;
     } catch (error) {
-      return false;
-    }
-  }
-}
-
-  async isBookDisplayed(bookTitle: string): Promise<boolean> {
-    try {
-      const bookRow = this.page.locator(`text=${bookTitle}`);
-      await bookRow.waitFor({ state: 'visible', timeout: 3000 });
       return true;
-    } catch {
-      return false;
     }
-  }
-
-  async getBookCount(): Promise<number> {
-    const rows = await this.bookRows.count();
-    return rows;
   }
 }
