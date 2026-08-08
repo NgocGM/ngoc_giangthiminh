@@ -25,27 +25,20 @@ export class LoginPage {
   async fillUsername(username: string) {
     await this.usernameInput.click();
     await this.usernameInput.fill(username);
-    console.log(`Filled Username: ${username}`);
   }
 
   async fillPassword(password: string) {
     await this.passwordInput.click();
     await this.passwordInput.fill(password);
-    console.log(`Filled Password: ${password}`);
   }
 
   async clickLogin() {
-    console.log('Clicking Login button...');
     await this.loginButton.click();
     
-    // Wait for page navigation after login (redirect to dashboard/book store)
+    // Wait for page navigation after login
     await this.page.waitForURL('**/profile', { timeout: 15000 }).catch(() => {
-      console.log('Dashboard URL not detected, waiting for network idle instead');
+      // Fallback if URL doesn't match expected pattern
     });
-    
-    // // Also wait for network to settle
-    // await this.page.waitForLoadState('networkidle');
-    // console.log('✅ Login page load complete');
   }
 
   async login(username: string, password: string) {
@@ -56,7 +49,6 @@ export class LoginPage {
 
   async clickNewUser() {
     await this.newUserButton.click();
-    console.log('Clicking New User button...');
     await this.page.waitForURL('**/register', { timeout: 15000 });
     console.log('Navigated to register page');
   }

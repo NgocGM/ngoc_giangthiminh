@@ -23,15 +23,13 @@ export class BookStorePage {
   }
 
   async enterSearchKeyword(keyword: string) {
-    console.log(`Entering search keyword: ${keyword}`);
     await this.searchInput.fill(keyword);
     
-    // Wait for search results to appear or "No records found" message
+    // Wait for search results to appear
     try {
       await this.page.waitForSelector('div.rt-tr-group, text=No records found', { timeout: 5000 });
-      console.log('✅ Search results loaded');
     } catch (error) {
-      console.warn('⚠️ Search results not found in 5s, proceeding anyway');
+      // Results may not load immediately, continue anyway
     }
   }
 
