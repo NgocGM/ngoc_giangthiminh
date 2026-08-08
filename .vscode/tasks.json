@@ -1,0 +1,32 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Playwright Tests",
+      "type": "shell",
+      "command": "npx",
+      "args": ["playwright", "test"],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "isBackground": false,
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Run Current Test File",
+      "type": "shell",
+      "command": "npx",
+      "args": ["playwright", "test", "${file}"],
+      "group": "test",
+      "isBackground": false,
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    }
+  ]
+}
