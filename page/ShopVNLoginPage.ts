@@ -11,7 +11,7 @@ export class ShopVNLoginPage {
   constructor(public page: Page) {
     this.usernameInput = page.locator('input[type="text"]').first();
     this.passwordInput = page.locator('input[type="password"]');
-    this.loginButton = page.locator('button:has-text("Login"), button:has-text("Sign In")').first();
+    this.loginButton = page.locator('button[data-testid="login-submit"]');
     this.errorMessage = page.locator('[class*="error"], [class*="alert"]').first();
   }
 
