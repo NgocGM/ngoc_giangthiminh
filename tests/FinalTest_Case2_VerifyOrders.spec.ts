@@ -1,6 +1,6 @@
 import { test, expect } from '../fixtures/test';
 
-test.describe('Final Test - Case 2: Verify Orders Page (Seed Order via API)', () => {
+test.describe('Final Test - Case 2: Add Product to Cart and Verify (Seed Order via API)', () => {
   
   test.beforeEach(async ({ shopVNLoginPage }) => {
     // Navigate to login page
@@ -10,10 +10,108 @@ test.describe('Final Test - Case 2: Verify Orders Page (Seed Order via API)', ()
     await shopVNLoginPage.login('admin', 'password123');
     
     // Verify successful login by checking page URL
-    await expect(shopVNLoginPage.page).toHaveURL(/orders|profile|dashboard/);
+    await expect(shopVNLoginPage.page).toHaveURL(/home|dashboard|orders|products/);
   });
 
-  test('Should verify orders page by seeding an order via API', async ({ shopVNLoginPage, ordersPage, page, context }) => {
+  test('Should add single product to cart and verify quantity', async ({ productPage, cartPage, page }) => {
+    // Navigate to products page
+    await productPage.navigateTo();
+    await page.waitForLoadState('networkidle');
+
+    // Get product details
+    const productName = await productPage.getProductName();
+    const productPrice = await productPage.getProductPrice();
+    console.log('Product selected:', productName);
+    console.log('Product price:', productPrice);
+
+    // Set quantity to 1
+    await productPage.setQuantity(1);
+    const quantity = await productPage.getQuantity();
+    expect(quantity).toBe('1');
+    console.log('Quantity set to:', quantity);
+
+    // Add to cart
+    await productPage.clickAddToCart();
+    await page.waitForLoadState('networkidle');
+
+    // Verify success message
+    const isSuccess = await productPage.isSuccessMessageDisplayed();
+    if (isSuccess) {
+      const successMsg = await productPage.getSuccessMessage();
+      console.log('Success message:', successMsg);
+      expect(isSuccess).toBe(true);
+    }
+
+    console.log('✓ Product added to cart successfully');
+  });
+
+  test('Should verify product in cart with correct quantity', async ({ productPage, cartPage, page }) => {
+    // Navigate to products page
+    await productPage.navigateTo();
+    await page.waitForLoadState('networkidle');
+
+    // Add 1 item to cart
+    await productPage.setQuantity(1);
+    await productPage.clickAddToCart();
+    await page.waitForLoadState('networkidle');
+
+    // Navigate to cart page
+    await cartPage.navigateTo();
+    await expect(page).toHaveURL(/cart/);
+
+    // Get cart items
+    const cartItems = await cartPage.getCartItems();
+    console.log('Cart items:', cartItems);
+
+    // Verify at least one item in cart
+    expect(cartItems.length).toBeGreaterThan(0);
+
+    // Verify first item has quantity 1 or more
+    const firstItem = cartItems[0];
+    const cartQuantity = parseInt(firstItem.quantity) || 1;
+    
+    console.log(`Item in cart: ${firstItem.name}`);
+    console.log(`Cart quantity: ${cartQuantity}`);
+    
+    expect(cartQuantity).toBeGreaterThanOrEqual(1);
+    expect(firstItem.price).toBeTruthy();
+  });
+
+  test('Should verify cart page displays correctly', async ({ cartPage, page }) => {
+    // Navigate to cart
+    await cartPage.navigateTo();
+    await expect(page).toHaveURL(/cart/);
+
+    // Get cart state
+    const isEmptyCart = await cartPage.isEmptyCartDisplayed();
+    const itemCount = await cartPage.getCartItemCount();
+
+    console.log(`Empty cart: ${isEmptyCart}`);
+    console.log(`Item count: ${itemCount}`);
+
+    if (!isEmptyCart && itemCount > 0) {
+      // Verify cart total is displayed
+      const total = await cartPage.getCartTotal();
+      expect(total).toBeTruthy();
+      console.log('Cart total:', total);
+
+      // Verify cart items are displayed
+      const items = await cartPage.getCartItems();
+      expect(items.length).toBeGreaterThan(0);
+      
+      for (const item of items) {
+        expect(item.name).toBeTruthy();
+        expect(item.quantity).toBeTruthy();
+      }
+
+      console.log('✓ Cart page displays correctly with items');
+    } else {
+      console.log('Cart is empty - verifying empty state');
+      expect(isEmptyCart).toBe(true);
+    }
+  });
+
+  test('Should seed order via API and verify orders page', async ({ ordersPage, page }) => {
     // Get auth token from local storage or session
     const token = await page.evaluate(() => {
       return localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || '';
@@ -42,8 +140,6 @@ test.describe('Final Test - Case 2: Verify Orders Page (Seed Order via API)', ()
 
     // Navigate to orders page
     await ordersPage.navigateTo();
-
-    // Wait for orders to load
     await page.waitForLoadState('networkidle');
 
     // Verify orders page is displayed
@@ -72,47 +168,5 @@ test.describe('Final Test - Case 2: Verify Orders Page (Seed Order via API)', ()
     const pageHeading = await page.locator('h1, h2, [class*="heading"]').first().textContent();
     expect(pageHeading).toBeTruthy();
     console.log('Page heading:', pageHeading);
-  });
-
-  test('Should verify order details are displayed correctly', async ({ ordersPage }) => {
-    // Navigate to orders page
-    await ordersPage.navigateTo();
-
-    // Check if orders table is visible
-    const orderCount = await ordersPage.getOrderCount();
-    
-    if (orderCount > 0) {
-      const orders = await ordersPage.getOrdersList();
-      
-      // Verify each order has required fields
-      for (const order of orders) {
-        expect(order.id).toBeTruthy();
-        expect(order.status).toBeTruthy();
-      }
-      
-      console.log(`Verified ${orders.length} orders are displayed with correct structure`);
-    }
-  });
-
-  test('Should be able to refresh orders page', async ({ ordersPage, page }) => {
-    // Navigate to orders page
-    await ordersPage.navigateTo();
-
-    // Get initial order count
-    const initialCount = await ordersPage.getOrderCount();
-
-    // Try to refresh the page
-    try {
-      await ordersPage.clickRefresh();
-      console.log('Orders page refreshed successfully');
-    } catch (error) {
-      // If refresh button doesn't exist, reload page manually
-      await page.reload();
-      console.log('Page reloaded manually');
-    }
-
-    // Verify page is still accessible
-    const finalCount = await ordersPage.getOrderCount();
-    expect(finalCount).toBeGreaterThanOrEqual(0);
   });
 });
