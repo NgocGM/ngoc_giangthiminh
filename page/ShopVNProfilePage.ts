@@ -31,7 +31,7 @@ export class ShopVNProfilePage {
 
   async clickEdit() {
     await this.editButton.click();
-    await this.page.waitForTimeout(500);
+    await this.fullNameInput.waitFor({ state: 'visible' });
   }
 
   async fillFullName(fullName: string) {

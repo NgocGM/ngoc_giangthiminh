@@ -1,150 +1,68 @@
 import { test, expect } from '../fixtures/test';
+import { randomFullName, randomPhone, randomAddress } from '../utils/TestUtils';
 
-test.describe('Final Test - Case 5: Update Full Name, Then Cleanup via API', () => {
-  
-  test.beforeEach(async ({ shopVNLoginPage }) => {
-    // Navigate to login page
+test.describe('Final Test - Case 5: Checkout Succeeds with Valid Receiver Info (COD)', () => {
+
+  test.beforeEach(async ({ shopVNLoginPage, productPage, cartPage }) => {
+    // Login
     await shopVNLoginPage.navigateTo();
-    
-    // Login with credentials
     await shopVNLoginPage.login('admin', 'password123');
-    
-    // Verify successful login
-    await expect(shopVNLoginPage.page).toHaveURL(/orders|profile|dashboard/);
+    await expect(shopVNLoginPage.page).toHaveURL(/home|dashboard|products|orders/);
+
+    // Add a product to cart as prerequisite
+    await productPage.navigateTo();
+    await productPage.setQuantity(1);
+    await productPage.clickAddToCart();
+    await productPage.page.waitForLoadState('domcontentloaded');
   });
 
-  test('Should update full name and verify change', async ({ shopVNLoginPage, shopVNProfilePage, page }) => {
-    // Navigate to profile page
-    await shopVNProfilePage.navigateTo();
+  test('Should checkout successfully with valid receiver info (COD)', async ({ checkoutPage, page }) => {
+    // Navigate to checkout
+    await checkoutPage.navigateTo();
+    await page.waitForLoadState('domcontentloaded');
 
-    // Verify profile page is loaded
-    await expect(page).toHaveURL(/profile/);
+    // Verify checkout page is ready
+    const isReady = await checkoutPage.isCheckoutPageReady();
+    expect(isReady).toBe(true);
+    console.log('Checkout page loaded');
 
-    // Get current full name
-    const currentName = await shopVNProfilePage.getFullName();
-    console.log('Current full name:', currentName);
+    // Fill in valid receiver info
+    await checkoutPage.fillReceiverName(randomFullName());
+    await checkoutPage.fillReceiverPhone(randomPhone());
+    await checkoutPage.fillReceiverAddress(randomAddress());
+    console.log('Receiver info filled');
 
-    // Define new full name
-    const newFullName = 'John Doe Updated ' + Date.now();
+    // Select COD payment
+    await checkoutPage.selectCODPayment();
+    console.log('COD payment selected');
 
-    // Update full name through UI
-    await shopVNProfilePage.updateFullName(newFullName);
+    // Place the order
+    await checkoutPage.clickPlaceOrder();
+    await page.waitForLoadState('domcontentloaded');
 
-    // Verify success message is displayed
-    const isSuccess = await shopVNProfilePage.isSuccessMessageDisplayed();
-    if (isSuccess) {
-      const successMsg = await shopVNProfilePage.getSuccessMessage();
-      console.log('Success message:', successMsg);
-      expect(isSuccess).toBe(true);
-    }
+    // Verify checkout success
+    const isSuccessPage = await checkoutPage.isOnSuccessPage();
+    const isSuccessMsg = await checkoutPage.isSuccessMessageDisplayed();
 
-    // Verify the full name was updated
-    const updatedName = await shopVNProfilePage.getFullName();
-    expect(updatedName).toContain('Updated');
-    console.log('Updated full name:', updatedName);
+    console.log('Success page:', isSuccessPage);
+    console.log('Success message:', isSuccessMsg);
+
+    expect(isSuccessPage || isSuccessMsg).toBe(true);
+    console.log('Checkout completed successfully');
   });
 
-  test('Should update full name via API and verify', async ({ shopVNLoginPage, shopVNProfilePage, page }) => {
-    // Get auth token
-    const token = await page.evaluate(() => {
-      return localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || '';
-    });
+  test('Should display checkout form with required fields', async ({ checkoutPage, page }) => {
+    // Navigate to checkout
+    await checkoutPage.navigateTo();
+    await page.waitForLoadState('domcontentloaded');
 
-    const newFullName = 'API Updated User ' + Date.now();
+    // Verify all required fields are visible
+    await expect(checkoutPage.receiverNameInput).toBeVisible();
+    await expect(checkoutPage.receiverPhoneInput).toBeVisible();
+    await expect(checkoutPage.receiverAddressInput).toBeVisible();
+    await expect(checkoutPage.codPaymentOption).toBeVisible();
+    await expect(checkoutPage.placeOrderButton).toBeVisible();
 
-    try {
-      // Update profile via API
-      const updatedProfile = await shopVNProfilePage.updateProfileViaAPI(token || 'test-token', {
-        fullName: newFullName,
-      });
-
-      console.log('Profile updated via API:', updatedProfile);
-      expect(updatedProfile).toHaveProperty('fullName');
-      
-      // Verify the updated full name
-      if (updatedProfile.fullName) {
-        expect(updatedProfile.fullName).toContain('API Updated');
-      }
-    } catch (error) {
-      console.log('API update may require authentication setup. Testing UI update instead.');
-      
-      // Fall back to UI update
-      await shopVNProfilePage.navigateTo();
-      await shopVNProfilePage.updateFullName(newFullName);
-      const updatedName = await shopVNProfilePage.getFullName();
-      expect(updatedName).toBeTruthy();
-    }
-  });
-
-  test('Should cleanup profile changes via API', async ({ shopVNProfilePage, page }) => {
-    // Get auth token
-    const token = await page.evaluate(() => {
-      return localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || '';
-    });
-
-    // Define cleanup data - restore to original or clean state
-    const cleanupData = {
-      fullName: 'Admin User',
-    };
-
-    try {
-      // Cleanup via API
-      const result = await shopVNProfilePage.updateProfileViaAPI(token || 'test-token', cleanupData);
-      console.log('Profile cleanup via API successful:', result);
-      expect(result).toHaveProperty('id');
-    } catch (error) {
-      console.log('API cleanup may require authentication setup.');
-      
-      // Fall back to UI cleanup
-      await shopVNProfilePage.navigateTo();
-      await shopVNProfilePage.updateFullName('Admin User');
-      console.log('Profile cleanup via UI successful');
-    }
-  });
-
-  test('Should verify profile data consistency', async ({ shopVNProfilePage, page }) => {
-    // Navigate to profile
-    await shopVNProfilePage.navigateTo();
-
-    // Get token for API call
-    const token = await page.evaluate(() => {
-      return localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || '';
-    });
-
-    try {
-      // Get profile via API
-      const profileData = await shopVNProfilePage.getProfileViaAPI(token || 'test-token');
-      console.log('Profile data from API:', profileData);
-
-      // Verify required fields exist
-      expect(profileData).toHaveProperty('id');
-      expect(profileData).toHaveProperty('fullName');
-      
-      // Get UI data
-      const uiFullName = await shopVNProfilePage.getFullName();
-      
-      // Compare if both exist
-      if (profileData.fullName && uiFullName) {
-        console.log(`API name: ${profileData.fullName}, UI name: ${uiFullName}`);
-      }
-    } catch (error) {
-      console.log('API verification not available, checking UI only');
-      
-      // At least verify UI can load profile
-      const uiFullName = await shopVNProfilePage.getFullName();
-      expect(uiFullName).toBeTruthy();
-    }
-  });
-
-  test('Should handle profile update errors gracefully', async ({ shopVNProfilePage }) => {
-    // Navigate to profile
-    await shopVNProfilePage.navigateTo();
-
-    // Try to update with valid data
-    await shopVNProfilePage.updateFullName('Valid Name');
-
-    // Check if there's an error message (should not be)
-    const hasError = await shopVNProfilePage.isErrorMessageDisplayed();
-    expect(hasError).toBe(false);
+    console.log('All checkout form fields are visible');
   });
 });

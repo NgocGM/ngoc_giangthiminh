@@ -4,6 +4,7 @@ import { OrdersPage } from '../page/OrdersPage';
 import { ShopVNProfilePage } from '../page/ShopVNProfilePage';
 import { CartPage } from '../page/CartPage';
 import { ProductPage } from '../page/ProductPage';
+import { CheckoutPage } from '../page/CheckoutPage';
 
 type TestFixtures = {
   shopVNLoginPage: ShopVNLoginPage;
@@ -11,6 +12,7 @@ type TestFixtures = {
   shopVNProfilePage: ShopVNProfilePage;
   cartPage: CartPage;
   productPage: ProductPage;
+  checkoutPage: CheckoutPage;
 };
 
 export const test = base.extend<TestFixtures>({
@@ -39,6 +41,11 @@ export const test = base.extend<TestFixtures>({
   productPage: async ({ page }, use) => {
     const productPage = new ProductPage(page);
     await use(productPage);
+  },
+
+  checkoutPage: async ({ page }, use) => {
+    const checkoutPage = new CheckoutPage(page);
+    await use(checkoutPage);
   }
 });
 
