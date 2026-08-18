@@ -1,85 +1,27 @@
+import {
+  randomAddress,
+  randomEmail,
+  randomFullName,
+  randomPhone
+} from './StringUtils';
+
 /**
  * Authentication and Common API Utilities for ShopVN tests
  */
 
 export class AuthUtils {
-  /**
-   * Generate random string for unique names
-   */
-  static generateRandomString(length: number = 8, type: 'lowercase' | 'uppercase' | 'mixed' | 'numeric' = 'lowercase'): string {
-    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
-    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const numbers = '0123456789';
-    
-    let chars = '';
-    
-    if (type === 'lowercase') {
-      chars = lowercase;
-    } else if (type === 'uppercase') {
-      chars = uppercase;
-    } else if (type === 'mixed') {
-      chars = lowercase + uppercase + numbers;
-    } else if (type === 'numeric') {
-      chars = numbers;
-    }
-    
-    let result = '';
-    for (let i = 0; i < length; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    
-    return result;
-  }
-
-  /**
-   * Generate random email
-   */
   static generateRandomEmail(): string {
-    const randomPart = this.generateRandomString(10, 'lowercase');
-    return `test_${randomPart}@example.com`;
+    return randomEmail();
   }
 
-  /**
-   * Generate random full name
-   */
   static generateRandomFullName(): string {
-    const firstNames = [
-      'James', 'John', 'Robert', 'Michael', 'William', 'David', 'Richard', 'Joseph',
-      'Mary', 'Patricia', 'Jennifer', 'Linda', 'Barbara', 'Elizabeth', 'Susan', 'Jessica'
-    ];
-    
-    const lastNames = [
-      'Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis',
-      'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson'
-    ];
-    
-    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-    
-    return `${firstName} ${lastName}`;
+    return randomFullName();
   }
 
-  /**
-   * Generate random phone number
-   */
   static generateRandomPhone(): string {
-    let phone = '+1';
-    for (let i = 0; i < 10; i++) {
-      phone += Math.floor(Math.random() * 10);
-    }
-    return phone;
+    return randomPhone();
   }
 
-  /**
-   * Wait for element to be ready
-   */
-  static async delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  /**
-   * Extract token from localStorage or sessionStorage
-   */
   static getStorageToken(page: any, key: string = 'authToken'): Promise<string> {
     return page.evaluate((storageKey: string) => {
       return localStorage.getItem(storageKey) || sessionStorage.getItem(storageKey) || '';
@@ -141,10 +83,10 @@ export class ProfileBuilder {
 
   constructor() {
     this.profileData = {
-      fullName: AuthUtils.generateRandomFullName(),
-      email: AuthUtils.generateRandomEmail(),
-      phone: AuthUtils.generateRandomPhone(),
-      address: '123 Test Street'
+      fullName: randomFullName(),
+      email: randomEmail(),
+      phone: randomPhone(),
+      address: randomAddress()
     };
   }
 

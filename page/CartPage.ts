@@ -15,52 +15,99 @@ export class CartPage {
   CART_URL = 'https://testing.platformforge.dev/cart';
 
   constructor(public page: Page) {
-    this.cartButton = page.locator('button:has-text("Cart"), a:has-text("Cart")').first();
-    this.cartIcon = page.locator('[class*="cart-icon"], [class*="shopping-cart"]').first();
-    this.cartItems = page.locator('[class*="cart-item"], tr[class*="item"]');
-    this.cartItemRows = page.locator('tbody tr, [class*="cart-item"]');
-    this.quantityInput = page.locator('input[type="number"]').first();
-    this.removeButton = page.locator('button:has-text("Remove"), button:has-text("Delete")').first();
-    this.checkoutButton = page.locator('button:has-text("Checkout"), button:has-text("Proceed")');
-    this.emptyCartMessage = page.locator('text=Your cart is empty, text=No items');
-    this.cartTotal = page.locator('[class*="total"], text=/Total.*\\$/').first();
-    this.cartCount = page.locator('[class*="cart-count"], [class*="badge"]').first();
+    this.cartButton = page
+      .locator('button:has-text("Giỏ hàng"), a:has-text("Giỏ hàng")')
+      .first();
+
+    this.cartIcon = page
+      .locator('[class*="cart-icon"], [class*="shopping-cart"]')
+      .first();
+
+    // Container của từng sản phẩm
+    this.cartItems = page.locator('.cart-items > .cart-item');
+
+    this.cartItemRows = page.locator('.cart-items > .cart-item');
+
+    // Cart hiện tại không có input[type="number"]
+    this.quantityInput = page
+      .locator('.cart-item .item-qty')
+      .first();
+
+    this.removeButton = page
+      .locator('.cart-item .remove-btn')
+      .first();
+
+    this.checkoutButton = page
+      .locator(
+        'button:has-text("Thanh toán"), button:has-text("Checkout"), button:has-text("Proceed")'
+      )
+      .first();
+
+    this.emptyCartMessage = page.locator(
+      'text=Giỏ hàng trống, text=Your cart is empty, text=No items'
+    );
+
+    this.cartTotal = page
+      .locator('.cart-summary [class*="total"]')
+      .first();
+
+    this.cartCount = page
+      .locator('.cart-count, .badge')
+      .first();
   }
 
   async navigateTo() {
     await this.page.goto(this.CART_URL);
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState('domcontentloaded');
   }
 
   async clickCartButton() {
     await this.cartButton.click();
-    await this.page.waitForLoadState('networkidle');
   }
 
   async clickCartIcon() {
     await this.cartIcon.click();
-    await this.page.waitForLoadState('networkidle');
   }
 
   async getCartItemCount(): Promise<number> {
-    const items = await this.cartItemRows.all();
-    return items.length;
+    return await this.cartItemRows.count();
   }
 
   async getCartItems() {
-    const items: any[] = [];
-    const rows = await this.cartItemRows.all();
+    const items: {
+      name: string;
+      quantity: string;
+      price: string;
+    }[] = [];
 
-    for (const row of rows) {
-      const productName = await row.locator('td:nth-child(1), [class*="name"]').textContent();
-      const quantity = await row.locator('input[type="number"], td:nth-child(2)').inputValue().catch(() => '1');
-      const price = await row.locator('td:nth-child(3), [class*="price"]').textContent();
-      
-      if (productName && productName.trim()) {
+    const rowCount = await this.cartItemRows.count();
+
+    for (let i = 0; i < rowCount; i++) {
+      const row = this.cartItemRows.nth(i);
+
+      const productName =
+        (await row.locator('.item-name').textContent())?.trim() || '';
+
+      const quantityText =
+        (await row.locator('.item-qty').textContent())?.trim() || '';
+
+      // item-qty chứa "- [số] +" nên lấy span ở giữa thay vì parse text
+      const quantity =
+        (await row.locator('.item-qty span').textContent())?.trim() ||
+        quantityText.match(/\d+/)?.[0] ||
+        '1';
+
+      // TODO: verify class name .item-unit-price matches actual DOM
+      const price =
+        (await row.locator('.item-unit-price, .item-price').first().textContent())
+          ?.replace('/ cái', '')
+          .trim() || '';
+
+      if (productName) {
         items.push({
-          name: productName.trim(),
-          quantity: quantity || '1',
-          price: price?.trim() || '',
+          name: productName,
+          quantity,
+          price
         });
       }
     }
@@ -69,23 +116,44 @@ export class CartPage {
   }
 
   async getFirstItemQuantity(): Promise<string> {
-    const quantity = await this.quantityInput.inputValue();
-    return quantity || '1';
+    const quantityText =
+      (await this.quantityInput.textContent())?.trim() || '';
+
+    const quantityMatch = quantityText.match(/\d+/);
+
+    return quantityMatch?.[0] || '1';
   }
 
   async updateQuantity(quantity: number, itemIndex: number = 0) {
-    const quantityInputs = this.page.locator('input[type="number"]');
-    const input = quantityInputs.nth(itemIndex);
-    
-    await input.clear();
-    await input.fill(quantity.toString());
-    await this.page.keyboard.press('Enter');
-    await this.page.waitForLoadState('networkidle');
+    const row = this.cartItemRows.nth(itemIndex);
+    const quantityArea = row.locator('.item-qty');
+
+    const currentText = await quantityArea.textContent();
+    const currentMatch = currentText?.match(/\d+/);
+    const currentQuantity = Number(currentMatch?.[0] || 1);
+
+    if (quantity > currentQuantity) {
+      const increaseButton = quantityArea.locator('button').last();
+
+      for (let i = currentQuantity; i < quantity; i++) {
+        await increaseButton.click();
+      }
+    } else if (quantity < currentQuantity) {
+      const decreaseButton = quantityArea.locator('button').first();
+
+      for (let i = currentQuantity; i > quantity; i--) {
+        await decreaseButton.click();
+      }
+    }
   }
 
   async isEmptyCartDisplayed(): Promise<boolean> {
     try {
-      await this.emptyCartMessage.waitFor({ state: 'visible', timeout: 3000 });
+      await this.emptyCartMessage.waitFor({
+        state: 'visible',
+        timeout: 3000
+      });
+
       return true;
     } catch {
       return false;
@@ -93,20 +161,18 @@ export class CartPage {
   }
 
   async getCartTotal(): Promise<string> {
-    return await this.cartTotal.textContent() || '';
+    return (await this.cartTotal.textContent())?.trim() || '';
   }
 
   async removeFirstItem() {
     await this.removeButton.click();
-    await this.page.waitForLoadState('networkidle');
   }
 
   async clickCheckout() {
     await this.checkoutButton.click();
-    await this.page.waitForLoadState('networkidle');
   }
 
   async getCartCountBadge(): Promise<string> {
-    return await this.cartCount.textContent() || '0';
+    return (await this.cartCount.textContent())?.trim() || '0';
   }
 }

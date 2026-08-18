@@ -9,7 +9,7 @@ export class ShopVNLoginPage {
   LOGIN_URL = 'https://testing.platformforge.dev/login';
 
   constructor(public page: Page) {
-    this.usernameInput = page.locator('input[type="text"]').first();
+    this.usernameInput = page.locator('input[data-testid="login-username"]').first();
     this.passwordInput = page.locator('input[type="password"]');
     this.loginButton = page.locator('button[data-testid="login-submit"]');
     this.errorMessage = page.locator('[class*="error"], [class*="alert"]').first();
