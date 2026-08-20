@@ -57,6 +57,7 @@ jobs:
         with:
           name: test-reports
           path: |
+            test-results
             playwright-report
             allure-results
             allure-report
