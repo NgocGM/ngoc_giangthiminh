@@ -37,7 +37,7 @@ export default defineConfig({
       name: 'msedge',
       use: { 
         ...devices['Desktop Edge'],
-        headless: !process.env.CI,
+        headless: !!process.env.CI ? true : false,
       },
     },
 
