@@ -1,0 +1,12 @@
+{
+  "checkout": {
+    "receiverName": "Le Van Test",
+    "receiverPhone": "0912345678",
+    "receiverAddress": "123 Nguyen Hue, Quan 1, TP.HCM",
+    "paymentMethod": "COD",
+    "successHeading": "Đặt hàng thành công!"
+  },
+  "profile": {
+    "updatedFullName": "Nguyen Van A"
+  }
+}

@@ -1,9 +1,5 @@
 import { test, expect } from '../fixtures/test';
-import {
-  randomAddress,
-  randomFullName,
-  randomPhone
-} from '../utils/StringUtils';
+import testData from '../fixtures/test-data.json';
 
 test.describe(
   'Final Test - Case 5: Checkout Succeeds with Valid Receiver Info (COD)',
@@ -34,9 +30,8 @@ test.describe(
 
         await checkoutPage.expectCheckoutReady();
 
-        const receiverName = randomFullName();
-        const receiverPhone = randomPhone();
-        const receiverAddress = randomAddress();
+        const { receiverName, receiverPhone, receiverAddress, successHeading } =
+          testData.checkout;
 
         await checkoutPage.fillReceiverInfo(
           receiverName,
@@ -48,7 +43,7 @@ test.describe(
 
         await checkoutPage.clickPlaceOrder();
 
-        await checkoutPage.expectOrderSuccess('Đặt hàng thành công!');
+        await checkoutPage.expectOrderSuccess(successHeading);
       }
     );
   }

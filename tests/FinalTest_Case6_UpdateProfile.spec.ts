@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures/test';
-import { randomFullName } from '../utils/StringUtils';
+import testData from '../fixtures/test-data.json';
 
 test.describe(
   'Final Test - Case 6: Advanced — Update Full Name, Then Clean Up via API',
@@ -24,7 +24,7 @@ test.describe(
       await expect(page).toHaveURL(/\/profile$/);
 
       const originalName = await shopVNProfilePage.getFullName();
-      const newFullName = randomFullName();
+      const newFullName = testData.profile.updatedFullName;
 
       await shopVNProfilePage.updateFullName(newFullName);
       await expect(

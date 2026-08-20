@@ -29,7 +29,7 @@ export const test = base.extend<TestFixtures>({
 
   shopVNProfilePage: async ({ page, context }, use) => {
     const request = await context.request;
-    const shopVNProfilePage = new ShopVNProfilePage(page, request);
+    const shopVNProfilePage = new ShopVNProfilePage(page);
     await use(shopVNProfilePage);
   },
 
